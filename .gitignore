@@ -50,3 +50,10 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+led_r/
+led_g/
+led_b/
+
+test
+.vscode/
