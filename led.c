@@ -6,11 +6,11 @@
 
 #define MAX_PRIORITY        10
 #define LEN_LED_COMMANDS    sizeof(LED_commands)/sizeof(ledCommand_t)
-// #define LED_PATH_PREFIX     "/sys/class/leds"
-#define LED_PATH_PREFIX     "."
-#define R_LED_PATH          LED_PATH_PREFIX"/led_r"
-#define G_LED_PATH          LED_PATH_PREFIX"/led_g"
-#define B_LED_PATH          LED_PATH_PREFIX"/led_b"
+#define LED_PATH_PREFIX     "/sys/class/leds"
+//#define LED_PATH_PREFIX     "."
+#define RED_LED_PATH        LED_PATH_PREFIX"/led_r"
+#define GREEN_LED_PATH      LED_PATH_PREFIX"/led_g"
+#define BLUE_LED_PATH       LED_PATH_PREFIX"/led_b"
 
 /********** Declare the LED commands here **************/
 ledCommand_t LED_commands[] = {{"c1", LED_WHITE, LED_STATIC, 1},
@@ -84,27 +84,31 @@ pthread_t LED_createThread()
     return ledThreadHandle;
 }
 
-void LED_setRType(indicatorType_t type)
+void LED_setRedTriggerType(triggerType_t type)
 {
     FILE *triggerFile;
     FILE *delayOnFile;
     FILE *delayOffFile;
 
-    triggerFile = fopen(R_LED_PATH"/trigger", "w");
+    triggerFile = fopen(RED_LED_PATH"/trigger", "w");
 
     switch(type)
     {
         case LED_OFF:       
             fputs("none", triggerFile); 
+            fclose(triggerFile);
             break;
         case LED_STATIC:    
             fputs("default-on", triggerFile); 
+            fclose(triggerFile);
             break;
         case LED_BLINKING_FAST:
             fputs("timer", triggerFile);
-            
-            delayOnFile = fopen(R_LED_PATH"/delay_on", "w");
-            delayOffFile = fopen(R_LED_PATH"/delay_off", "w");
+            fclose(triggerFile);
+
+            delayOnFile = fopen(RED_LED_PATH"/delay_on", "w");
+            delayOffFile = fopen(RED_LED_PATH"/delay_off", "w");
+            if(delayOnFile == NULL || delayOffFile == NULL) printf("led.c: delay file can't be opened\n");
             fputs("100", delayOffFile);
             fputs("100", delayOnFile);
 
@@ -113,26 +117,176 @@ void LED_setRType(indicatorType_t type)
             break;
         case LED_BLINKING_SLOW:
             fputs("timer", triggerFile);
+            fclose(triggerFile);
             break;
         
+        case LED_BLINKING_VERY_SLOW:
+            fputs("timer", triggerFile);
+            fclose(triggerFile);
+
+            delayOnFile = fopen(RED_LED_PATH"/delay_on", "w");
+            delayOffFile = fopen(RED_LED_PATH"/delay_off", "w");
+            if(delayOnFile == NULL || delayOffFile == NULL) printf("led.c: delay file can't be opened\n");
+            fputs("1000", delayOffFile);
+            fputs("1000", delayOnFile);
+
+            fclose(delayOffFile);
+            fclose(delayOnFile);
+            break;
     }
-
-    fclose(triggerFile);
 }
 
-void LED_setGType(indicatorType_t type)
+void LED_setGreenTriggerType(triggerType_t type)
 {
+    FILE *triggerFile;
+    FILE *delayOnFile;
+    FILE *delayOffFile;
 
+    triggerFile = fopen(GREEN_LED_PATH"/trigger", "w");
+
+    switch(type)
+    {
+        case LED_OFF:       
+            fputs("none", triggerFile); 
+            fclose(triggerFile);
+            break;
+        case LED_STATIC:    
+            fputs("default-on", triggerFile); 
+            fclose(triggerFile);
+            break;
+        case LED_BLINKING_FAST:
+            fputs("timer", triggerFile);
+            fclose(triggerFile);
+
+            delayOnFile = fopen(GREEN_LED_PATH"/delay_on", "w");
+            delayOffFile = fopen(GREEN_LED_PATH"/delay_off", "w");
+            if(delayOnFile == NULL || delayOffFile == NULL) printf("led.c: delay file can't be opened\n");
+            fputs("100", delayOffFile);
+            fputs("100", delayOnFile);
+
+            fclose(delayOffFile);
+            fclose(delayOnFile);
+            break;
+        case LED_BLINKING_SLOW:
+            fputs("timer", triggerFile);
+            fclose(triggerFile);
+            break;
+
+        case LED_BLINKING_VERY_SLOW:
+            fputs("timer", triggerFile);
+            fclose(triggerFile);
+
+            delayOnFile = fopen(GREEN_LED_PATH"/delay_on", "w");
+            delayOffFile = fopen(GREEN_LED_PATH"/delay_off", "w");
+            if(delayOnFile == NULL || delayOffFile == NULL) printf("led.c: delay file can't be opened\n");
+            fputs("1000", delayOffFile);
+            fputs("1000", delayOnFile);
+
+            fclose(delayOffFile);
+            fclose(delayOnFile);
+            break;
+    }
 }
 
-void LED_setBType(indicatorType_t type)
+void LED_setBlueTriggerType(triggerType_t type)
 {
+    FILE *triggerFile;
+    FILE *delayOnFile;
+    FILE *delayOffFile;
 
+    triggerFile = fopen(BLUE_LED_PATH"/trigger", "w");
+
+    switch(type)
+    {
+        case LED_OFF:       
+            fputs("none", triggerFile); 
+            fclose(triggerFile);
+            break;
+        case LED_STATIC:    
+            fputs("default-on", triggerFile); 
+            fclose(triggerFile);
+            break;
+        case LED_BLINKING_FAST:
+            fputs("timer", triggerFile);
+            fclose(triggerFile);
+
+            delayOnFile = fopen(BLUE_LED_PATH"/delay_on", "w");
+            delayOffFile = fopen(BLUE_LED_PATH"/delay_off", "w");
+            if(delayOnFile == NULL || delayOffFile == NULL) printf("led.c: delay file can't be opened\n");
+            fputs("100", delayOffFile);
+            fputs("100", delayOnFile);
+
+            fclose(delayOffFile);
+            fclose(delayOnFile);
+            break;
+        case LED_BLINKING_SLOW:
+            fputs("timer", triggerFile);
+            fclose(triggerFile);
+            break;
+
+        case LED_BLINKING_VERY_SLOW:
+            fputs("timer", triggerFile);
+            fclose(triggerFile);
+
+            delayOnFile = fopen(BLUE_LED_PATH"/delay_on", "w");
+            delayOffFile = fopen(BLUE_LED_PATH"/delay_off", "w");
+            if(delayOnFile == NULL || delayOffFile == NULL) printf("led.c: delay file can't be opened\n");
+            
+            fputs("1000", delayOffFile);
+            fputs("1000", delayOnFile);
+
+            fclose(delayOffFile);
+            fclose(delayOnFile);
+            break;
+    }
 }
 
-void LED_setMode(ledColor_t color, indicatorType_t type)
+void LED_setTriggerType(ledColor_t color, triggerType_t type) // can be used to represent any color on ledColor_t
 {
+    switch(color)
+    {
+        case LED_RED:
+            LED_setRedTriggerType(type);
+            LED_setGreenTriggerType(LED_OFF);
+            LED_setBlueTriggerType(LED_OFF);
+            break;
 
+        case LED_GREEN:
+            LED_setRedTriggerType(LED_OFF);
+            LED_setGreenTriggerType(type);
+            LED_setBlueTriggerType(LED_OFF);
+            break;
+
+        case LED_BLUE:
+            LED_setRedTriggerType(LED_OFF);
+            LED_setGreenTriggerType(LED_OFF);
+            LED_setBlueTriggerType(type);
+            break;
+
+        case LED_CYAN:
+            LED_setRedTriggerType(LED_OFF);
+            LED_setGreenTriggerType(type);
+            LED_setBlueTriggerType(type);
+            break;
+
+        case LED_PURPLE:
+            LED_setRedTriggerType(type);
+            LED_setGreenTriggerType(LED_OFF);
+            LED_setBlueTriggerType(type);
+            break;
+
+        case LED_YELLOW:
+            LED_setRedTriggerType(type);
+            LED_setGreenTriggerType(type);
+            LED_setBlueTriggerType(LED_OFF);
+            break;
+
+        case LED_WHITE:
+            LED_setRedTriggerType(type);
+            LED_setGreenTriggerType(type);
+            LED_setBlueTriggerType(type);
+            break;
+    }
 }
 
 void LED_setCommand(char* command)
@@ -151,4 +305,9 @@ void LED_setCommand(char* command)
     {
         printf("%d - %s\n", i, LED_commadStack[i]);
     }
+}
+
+void LED_runCommand(char* command)
+{
+    
 }
