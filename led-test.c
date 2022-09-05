@@ -13,7 +13,8 @@ int main(int argc, char** argv)
         printf("\n ====== Option ======\n");
         printf("0: Exit\n");
         printf("1: LED Trigger Test\n");
-        printf("2: Command test\n");
+        printf("2: Set Command Test\n");
+        printf("3: Clear Command Test\n");
         printf("Enter option: ");
         
         scanf("%d", &command);
@@ -59,13 +60,13 @@ int main(int argc, char** argv)
                         {   
                             switch(choosenLED)
                             {
-                                case LED_RED:  printf("\n ====== Red LED Command ======\n"); break;
-                                case LED_GREEN:  printf("\n ====== Green LED Command ======\n"); break;
-                                case LED_BLUE:  printf("\n ====== Blue LED Command ======\n"); break;
-                                case LED_CYAN:  printf("\n ====== Cyan LED Command ======\n"); break;
-                                case LED_PURPLE:  printf("\n ====== Purple LED Command ======\n"); break;
-                                case LED_YELLOW:  printf("\n ====== Yellow LED Command ======\n"); break;
-                                case LED_WHITE:  printf("\n ====== White LED Command ======\n"); break;
+                                case LED_RED: printf("\n ====== Red LED Command ======\n"); break;
+                                case LED_GREEN: printf("\n ====== Green LED Command ======\n"); break;
+                                case LED_BLUE: printf("\n ====== Blue LED Command ======\n"); break;
+                                case LED_CYAN: printf("\n ====== Cyan LED Command ======\n"); break;
+                                case LED_PURPLE: printf("\n ====== Purple LED Command ======\n"); break;
+                                case LED_YELLOW: printf("\n ====== Yellow LED Command ======\n"); break;
+                                case LED_WHITE: printf("\n ====== White LED Command ======\n"); break;
                             }
                            
                             printf("0: <<< Back\n");
@@ -111,10 +112,10 @@ int main(int argc, char** argv)
                     }
                 }
                 break;
-            case 2: // Command test
+            case 2: // Set Command Test
                 while(1)
                 {
-                    printf("\n ====== Command ======\n");
+                    printf("\n ====== Set Command ======\n");
                     printf("0: Exit\n");
                     printf("1: c1\n");
                     printf("2: c2\n");
@@ -144,6 +145,43 @@ int main(int argc, char** argv)
                         case 8: LED_setCommand("c8"); break;
                         case 9: LED_setCommand("c9"); break;
                         case 10: LED_setCommand("c10"); break;
+                    }
+                }
+                break;
+
+            case 3: // Clear Command Test
+                while(1)
+                {
+                    printf("\n ====== Clear Command ======\n");
+                    printf("0: Exit\n");
+                    printf("1: c1\n");
+                    printf("2: c2\n");
+                    printf("3: c3\n");
+                    printf("4: c4\n");
+                    printf("5: c5\n");
+                    printf("6: c6\n");
+                    printf("7: c7\n");
+                    printf("8: c8\n");
+                    printf("9: c9\n");
+                    printf("10: c10\n");
+                    printf("Enter option: ");
+                    
+                    scanf("%d", &command);
+                    if(command == 0) break;
+                    
+                    printf("\n");
+                    switch(command)
+                    {
+                        case 1: LED_clearCommand("c1"); break;
+                        case 2: LED_clearCommand("c2"); break;
+                        case 3: LED_clearCommand("c3"); break;
+                        case 4: LED_clearCommand("c4"); break;
+                        case 5: LED_clearCommand("c5"); break;
+                        case 6: LED_clearCommand("c6"); break;
+                        case 7: LED_clearCommand("c7"); break;
+                        case 8: LED_clearCommand("c8"); break;
+                        case 9: LED_clearCommand("c9"); break;
+                        case 10: LED_clearCommand("c10"); break;
                     }
                 }
                 break;

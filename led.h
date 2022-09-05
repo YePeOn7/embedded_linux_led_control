@@ -31,16 +31,18 @@ typedef struct {
     ledColor_t color;
     triggerType_t type;
     int priority;
+    int holdTime; // in seconds
 }ledCommand_t;
 
 /****************************************/
 
 void test();
-pthread_t LED_createThread();
-void LED_setRedTriggerType(triggerType_t type);
-void LED_setGreenTriggerType(triggerType_t type);
-void LED_setBlueTriggerType(triggerType_t type);
+// pthread_t LED_createThread();
+// void LED_setRedTriggerType(triggerType_t type);
+// void LED_setGreenTriggerType(triggerType_t type);
+// void LED_setBlueTriggerType(triggerType_t type);
 void LED_setTriggerType(ledColor_t color, triggerType_t type);
 void LED_setCommand(char* command);
+void LED_clearCommand(char* command);
 
 #endif // __LED_H__

@@ -2,8 +2,11 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <string.h>
+#include <time.h>
 #include "led.h"
 
+
+#define LOG                 1       // still not used
 #define MAX_PRIORITY        10
 #define LEN_LED_COMMANDS    sizeof(LED_commands)/sizeof(ledCommand_t)
 #define LED_PATH_PREFIX     "/sys/class/leds"
@@ -13,18 +16,19 @@
 #define BLUE_LED_PATH       LED_PATH_PREFIX"/led_b"
 
 /********** Declare the LED commands here **************/
-ledCommand_t LED_commands[] = {{"c1", LED_WHITE, LED_STATIC, 1},
-                                {"c2", LED_BLUE, LED_BLINKING_FAST, 2},
-                                {"c3", LED_YELLOW, LED_BLINKING_SLOW, 3},
-                                {"c4", LED_YELLOW, LED_BLINKING_SLOW, 4},
-                                {"c5", LED_YELLOW, LED_BLINKING_SLOW, 4},
-                                {"c6", LED_YELLOW, LED_BLINKING_SLOW, 5},
-                                {"c7", LED_YELLOW, LED_BLINKING_SLOW, 5},
-                                {"c8", LED_YELLOW, LED_BLINKING_SLOW, 6},
-                                {"c9", LED_YELLOW, LED_BLINKING_SLOW, 7},
-                                {"c10", LED_YELLOW, LED_BLINKING_SLOW, 9}};
+ledCommand_t LED_commands[] = {{"c1", LED_WHITE, LED_STATIC, 1, 0},
+                                {"c2", LED_BLUE, LED_BLINKING_FAST, 2, 0},
+                                {"c3", LED_YELLOW, LED_BLINKING_SLOW, 3, 0},
+                                {"c4", LED_YELLOW, LED_BLINKING_SLOW, 4, 5},
+                                {"c5", LED_YELLOW, LED_BLINKING_SLOW, 4, 5},
+                                {"c6", LED_YELLOW, LED_BLINKING_SLOW, 5, 0},
+                                {"c7", LED_YELLOW, LED_BLINKING_SLOW, 5, 0},
+                                {"c8", LED_YELLOW, LED_BLINKING_SLOW, 6, 0},
+                                {"c9", LED_YELLOW, LED_BLINKING_SLOW, 7, 0},
+                                {"c10", LED_YELLOW, LED_BLINKING_SLOW, 9, 0}};
 
-char LED_commadStack[MAX_PRIORITY][50];
+ledCommand_t* LED_commandStack[MAX_PRIORITY] = {NULL};
+time_t LED_commandStartTime[MAX_PRIORITY] = {0};
 int threadStatus = 0;
 
 void test()
@@ -42,34 +46,63 @@ int LED_isThreadStatusOn()
     return threadStatus;
 }
 
-void LED_setTheadStatusOn()
+void LED_setThreadStatusOn()
 {
     threadStatus = 1;
 }
 
-void LED_updateStack(char* command)
+void LED_addCommandToStack(char* command)
 {
-    printf("Updating command stack...\n");
     for(int i = 0; i < LEN_LED_COMMANDS; i++)
     {
         printf("Checking --> %s\n", LED_commands[i].command);
         if(!strcmp(command, LED_commands[i].command))
         {
-            printf("updating stack: %s ---- priority: %d\n", LED_commands[i].command, LED_commands[i].priority);
-            sprintf(LED_commadStack[LED_commands[i].priority], "%s", LED_commands[i].command);
+            printf("updating stack: %s ---- priority: %d\n", LED_commands[i].command, LED_commands[i].priority);            
+            LED_commandStack[LED_commands[i].priority] = &LED_commands[i];
             break;
         }
     }
 }
 
+void LED_clearCommandStackByPriority(int priority)
+{
+    LED_commandStack[priority] = NULL;
+}
+
+int LED_clearCommandFromStack(char* command)
+{
+    int found = 0;
+    for(int i = 0; i < LEN_LED_COMMANDS; i++)
+    {
+        printf("Checking --> %s\n", LED_commands[i].command);
+        if(!strcmp(command, LED_commands[i].command))
+        {
+            printf("Clearing stack: %s ---- priority: %d\n", LED_commands[i].command, LED_commands[i].priority);            
+            LED_clearCommandStackByPriority(LED_commands[i].priority);
+            found = 1;
+            break;
+        }
+    }
+
+    if(!found) return -1; // the command is not found in the stack
+    return 0;
+}
+
+
+
 void *LED_threadLoop(void *args)
 {
     // int counter = 0;
+    // int LED_currentRunningPriority = 0;
     printf("starting thread...\n");
     while(1)
     {
-        // printf("counter -> %d\n", counter++);
-        // if (counter > 5) break;
+        // get the highest priority command to be executed
+        // for(int i = 0; i < MAX_PRIORITY; i++)
+        // {
+        //     if(!strcmp())
+        // }
         delayMs(500);
     }
 
@@ -79,7 +112,7 @@ void *LED_threadLoop(void *args)
 pthread_t LED_createThread()
 {  
     pthread_t ledThreadHandle;
-
+    
     pthread_create(&ledThreadHandle, NULL, LED_threadLoop, NULL);
     return ledThreadHandle;
 }
@@ -295,19 +328,26 @@ void LED_setCommand(char* command)
     if(!LED_isThreadStatusOn()) 
     {
         printf("creating a thread...\n");
-        LED_createThread();
-        LED_setTheadStatusOn();
+        // LED_createThread();
+        LED_setThreadStatusOn();
     }
 
-    LED_updateStack(command);
+    LED_addCommandToStack(command);
 
     for(int i = 0; i < MAX_PRIORITY; i++)
     {
-        printf("%d - %s\n", i, LED_commadStack[i]);
+        if(LED_commandStack[i] != NULL) printf("%d - %s\n", i, LED_commandStack[i]->command);
+        else printf("%d - empty\n", i);
     }
 }
 
-void LED_runCommand(char* command)
+void LED_clearCommand(char* command)
 {
-    
+    LED_clearCommandFromStack(command);
+
+    for(int i = 0; i < MAX_PRIORITY; i++)
+    {
+        if(LED_commandStack[i] != NULL) printf("%d - %s\n", i, LED_commandStack[i]->command);
+        else printf("%d - empty\n", i);
+    }
 }
