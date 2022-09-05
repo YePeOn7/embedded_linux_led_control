@@ -31,12 +31,13 @@ typedef struct {
     triggerType_t type;
     int priority;
     int holdTime; // in seconds
-    time_t startTime;
+
+    time_t startTime; // don't need to be initialized
 }ledCommand_t;
 
 /****************************************/
 
-void logPrint(const char* fmt, ...);
+// void logPrint(const char* fmt, ...);
 // pthread_t LED_createThread();
 // void LED_setRedTriggerType(triggerType_t type);
 // void LED_setGreenTriggerType(triggerType_t type);

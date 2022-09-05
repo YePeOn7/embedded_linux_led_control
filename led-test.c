@@ -20,11 +20,16 @@ int main(int argc, char** argv)
         scanf("%d", &command);
         if(command == 0) 
         {   
-            printf("Bye...\n");
+            printf("Bye...^^\n");
             break;
         }
-
+        else if(command > 3 || command < 0)
+        {
+            printf("Wrong input. Enter option 1-3...");
+            continue;
+        }
         printf("\n");
+        
         switch(command)
         {
             case 1: // Single LED Test

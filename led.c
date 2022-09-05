@@ -10,8 +10,8 @@
 #define LED_LOG             1       
 #define MAX_PRIORITY        10
 #define LEN_LED_COMMANDS    sizeof(LED_commands)/sizeof(ledCommand_t)
-#define LED_PATH_PREFIX     "/sys/class/leds"
-//#define LED_PATH_PREFIX     "."
+// #define LED_PATH_PREFIX     "/sys/class/leds"
+#define LED_PATH_PREFIX     "."
 #define RED_LED_PATH        LED_PATH_PREFIX"/led_r"
 #define GREEN_LED_PATH      LED_PATH_PREFIX"/led_g"
 #define BLUE_LED_PATH       LED_PATH_PREFIX"/led_b"
@@ -96,31 +96,6 @@ int LED_clearCommandFromStack(char* command)
 
     if(!found) return -1; // the command is not found in the stack
     return 0;
-}
-
-void *LED_threadLoop(void *args)
-{
-    // int counter = 0;
-    // int LED_currentRunningPriority = 0;
-    logPrint("starting thread...");
-    while(1)
-    {
-        // for(int i = 0; i < MAX_PRIORITY; i++)
-        // {
-        //     if()
-        // }
-        delayMs(500);
-    }
-
-    return NULL;
-}
-
-pthread_t LED_createThread()
-{  
-    pthread_t ledThreadHandle;
-    
-    pthread_create(&ledThreadHandle, NULL, LED_threadLoop, NULL);
-    return ledThreadHandle;
 }
 
 void LED_setRedTriggerType(triggerType_t type)
@@ -328,12 +303,63 @@ void LED_setTriggerType(ledColor_t color, triggerType_t type) // can be used to 
     }
 }
 
+void *LED_threadLoop(void *args)
+{
+    // int counter = 0;
+    int LED_currentRunningPriority = -1;
+    time_t currentTime;
+    logPrint("starting thread...");
+    while(1)
+    {
+        time(&currentTime);
+        for(int i = 0; i < MAX_PRIORITY; i++)
+        {
+            if(LED_commandStack[i] != NULL)
+            {
+                if(LED_commandStack[i]->holdTime != 0 && 
+                    currentTime - LED_commandStack[i]->startTime >= LED_commandStack[i]->holdTime)
+                {
+                    logPrint("\nHold time timeout reached - Clearing stack on priority %d: %s", i, LED_commandStack[i]->command);
+                    LED_clearCommandStackByPriority(i);
+
+                    for(int i = 0; i < MAX_PRIORITY; i++)
+                    {
+                        if(LED_commandStack[i] != NULL) logPrint("%d - %s, enterTime: %li", i, LED_commandStack[i]->command, LED_commandStack[i]->startTime);
+                        else logPrint("%d - empty", i);
+                    }
+                    continue;
+                }
+
+                else if(LED_currentRunningPriority != i)
+                {
+                    LED_currentRunningPriority = i;
+                    LED_setTriggerType(LED_commandStack[i]->color, LED_commandStack[i]->type);
+                    break;                    
+                }
+            }
+
+            if(i == MAX_PRIORITY-1) LED_setTriggerType(LED_WHITE, LED_OFF);
+        }
+        delayMs(500);
+    }
+
+    return NULL;
+}
+
+pthread_t LED_createThread()
+{  
+    pthread_t ledThreadHandle;
+    
+    pthread_create(&ledThreadHandle, NULL, LED_threadLoop, NULL);
+    return ledThreadHandle;
+}
+
 void LED_setCommand(char* command)
 {
     // pthread_t LED_threadHandle;
     if(!LED_isThreadStatusOn()) 
     {
-        // LED_createThread();
+        LED_createThread();
         LED_setThreadStatusOn();
     }
 
