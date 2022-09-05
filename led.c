@@ -68,7 +68,7 @@ void LED_addCommandToStack(char* command)
         {
             logPrint("updating stack: %s ---- priority: %d", LED_commands[i].command, LED_commands[i].priority);            
             LED_commandStack[LED_commands[i].priority] = &LED_commands[i];
-            time(&LED_commandStartTime[LED_commands[i].priority]);
+            time(&LED_commands[i].startTime);
             break;
         }
     }
@@ -77,7 +77,6 @@ void LED_addCommandToStack(char* command)
 void LED_clearCommandStackByPriority(int priority)
 {
     LED_commandStack[priority] = NULL;
-    LED_commandStartTime[priority] = 0;
 }
 
 int LED_clearCommandFromStack(char* command)
@@ -99,8 +98,6 @@ int LED_clearCommandFromStack(char* command)
     return 0;
 }
 
-
-
 void *LED_threadLoop(void *args)
 {
     // int counter = 0;
@@ -108,10 +105,9 @@ void *LED_threadLoop(void *args)
     logPrint("starting thread...");
     while(1)
     {
-        // get the highest priority command to be executed
         // for(int i = 0; i < MAX_PRIORITY; i++)
         // {
-        //     if(!strcmp())
+        //     if()
         // }
         delayMs(500);
     }
@@ -345,7 +341,7 @@ void LED_setCommand(char* command)
 
     for(int i = 0; i < MAX_PRIORITY; i++)
     {
-        if(LED_commandStack[i] != NULL) logPrint("%d - %s", i, LED_commandStack[i]->command);
+        if(LED_commandStack[i] != NULL) logPrint("%d - %s, enterTime: %li", i, LED_commandStack[i]->command, LED_commandStack[i]->startTime);
         else logPrint("%d - empty", i);
     }
 }
@@ -356,7 +352,7 @@ void LED_clearCommand(char* command)
 
     for(int i = 0; i < MAX_PRIORITY; i++)
     {
-        if(LED_commandStack[i] != NULL) logPrint("%d - %s", i, LED_commandStack[i]->command);
+        if(LED_commandStack[i] != NULL) logPrint("%d - %s, enterTime: %li", i, LED_commandStack[i]->command, LED_commandStack[i]->startTime);
         else logPrint("%d - empty", i);
     }
 }

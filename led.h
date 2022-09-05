@@ -1,10 +1,9 @@
-// #pragma once
-
 #ifndef __LED_H__
 #define __LED_H__
 
 #include <stdio.h>
 #include <pthread.h>
+#include <time.h>
 
 typedef enum
 {
@@ -32,6 +31,7 @@ typedef struct {
     triggerType_t type;
     int priority;
     int holdTime; // in seconds
+    time_t startTime;
 }ledCommand_t;
 
 /****************************************/
