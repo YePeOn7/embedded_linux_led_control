@@ -3,10 +3,11 @@
 #include <unistd.h>
 #include <string.h>
 #include <time.h>
+#include <stdarg.h>
 #include "led.h"
 
 
-#define LOG                 1       // still not used
+#define LED_LOG             1       
 #define MAX_PRIORITY        10
 #define LEN_LED_COMMANDS    sizeof(LED_commands)/sizeof(ledCommand_t)
 #define LED_PATH_PREFIX     "/sys/class/leds"
@@ -31,9 +32,16 @@ ledCommand_t* LED_commandStack[MAX_PRIORITY] = {NULL};
 time_t LED_commandStartTime[MAX_PRIORITY] = {0};
 int threadStatus = 0;
 
-void test()
+void logPrint(const char* fmt, ...)
 {
-    printf("Test\n");
+    if(LED_LOG)
+    {
+        va_list argptr;
+        va_start(argptr, fmt);
+        vprintf(fmt, argptr);
+        printf("\n");
+        va_end(argptr);
+    }
 }
 
 void delayMs(int ms)
@@ -55,11 +63,12 @@ void LED_addCommandToStack(char* command)
 {
     for(int i = 0; i < LEN_LED_COMMANDS; i++)
     {
-        printf("Checking --> %s\n", LED_commands[i].command);
+        logPrint("Checking --> %s", LED_commands[i].command);
         if(!strcmp(command, LED_commands[i].command))
         {
-            printf("updating stack: %s ---- priority: %d\n", LED_commands[i].command, LED_commands[i].priority);            
+            logPrint("updating stack: %s ---- priority: %d", LED_commands[i].command, LED_commands[i].priority);            
             LED_commandStack[LED_commands[i].priority] = &LED_commands[i];
+            time(&LED_commandStartTime[LED_commands[i].priority]);
             break;
         }
     }
@@ -68,6 +77,7 @@ void LED_addCommandToStack(char* command)
 void LED_clearCommandStackByPriority(int priority)
 {
     LED_commandStack[priority] = NULL;
+    LED_commandStartTime[priority] = 0;
 }
 
 int LED_clearCommandFromStack(char* command)
@@ -75,10 +85,10 @@ int LED_clearCommandFromStack(char* command)
     int found = 0;
     for(int i = 0; i < LEN_LED_COMMANDS; i++)
     {
-        printf("Checking --> %s\n", LED_commands[i].command);
+        logPrint("Checking --> %s", LED_commands[i].command);
         if(!strcmp(command, LED_commands[i].command))
         {
-            printf("Clearing stack: %s ---- priority: %d\n", LED_commands[i].command, LED_commands[i].priority);            
+            logPrint("Clearing stack: %s ---- priority: %d", LED_commands[i].command, LED_commands[i].priority);            
             LED_clearCommandStackByPriority(LED_commands[i].priority);
             found = 1;
             break;
@@ -95,7 +105,7 @@ void *LED_threadLoop(void *args)
 {
     // int counter = 0;
     // int LED_currentRunningPriority = 0;
-    printf("starting thread...\n");
+    logPrint("starting thread...");
     while(1)
     {
         // get the highest priority command to be executed
@@ -141,7 +151,7 @@ void LED_setRedTriggerType(triggerType_t type)
 
             delayOnFile = fopen(RED_LED_PATH"/delay_on", "w");
             delayOffFile = fopen(RED_LED_PATH"/delay_off", "w");
-            if(delayOnFile == NULL || delayOffFile == NULL) printf("led.c: delay file can't be opened\n");
+            if(delayOnFile == NULL || delayOffFile == NULL) logPrint("led.c: delay file can't be opened");
             fputs("100", delayOffFile);
             fputs("100", delayOnFile);
 
@@ -159,7 +169,7 @@ void LED_setRedTriggerType(triggerType_t type)
 
             delayOnFile = fopen(RED_LED_PATH"/delay_on", "w");
             delayOffFile = fopen(RED_LED_PATH"/delay_off", "w");
-            if(delayOnFile == NULL || delayOffFile == NULL) printf("led.c: delay file can't be opened\n");
+            if(delayOnFile == NULL || delayOffFile == NULL) logPrint("led.c: delay file can't be opened");
             fputs("1000", delayOffFile);
             fputs("1000", delayOnFile);
 
@@ -193,7 +203,7 @@ void LED_setGreenTriggerType(triggerType_t type)
 
             delayOnFile = fopen(GREEN_LED_PATH"/delay_on", "w");
             delayOffFile = fopen(GREEN_LED_PATH"/delay_off", "w");
-            if(delayOnFile == NULL || delayOffFile == NULL) printf("led.c: delay file can't be opened\n");
+            if(delayOnFile == NULL || delayOffFile == NULL) logPrint("led.c: delay file can't be opened\n");
             fputs("100", delayOffFile);
             fputs("100", delayOnFile);
 
@@ -211,7 +221,7 @@ void LED_setGreenTriggerType(triggerType_t type)
 
             delayOnFile = fopen(GREEN_LED_PATH"/delay_on", "w");
             delayOffFile = fopen(GREEN_LED_PATH"/delay_off", "w");
-            if(delayOnFile == NULL || delayOffFile == NULL) printf("led.c: delay file can't be opened\n");
+            if(delayOnFile == NULL || delayOffFile == NULL) logPrint("led.c: delay file can't be opened");
             fputs("1000", delayOffFile);
             fputs("1000", delayOnFile);
 
@@ -245,7 +255,7 @@ void LED_setBlueTriggerType(triggerType_t type)
 
             delayOnFile = fopen(BLUE_LED_PATH"/delay_on", "w");
             delayOffFile = fopen(BLUE_LED_PATH"/delay_off", "w");
-            if(delayOnFile == NULL || delayOffFile == NULL) printf("led.c: delay file can't be opened\n");
+            if(delayOnFile == NULL || delayOffFile == NULL) logPrint("led.c: delay file can't be opened");
             fputs("100", delayOffFile);
             fputs("100", delayOnFile);
 
@@ -263,7 +273,7 @@ void LED_setBlueTriggerType(triggerType_t type)
 
             delayOnFile = fopen(BLUE_LED_PATH"/delay_on", "w");
             delayOffFile = fopen(BLUE_LED_PATH"/delay_off", "w");
-            if(delayOnFile == NULL || delayOffFile == NULL) printf("led.c: delay file can't be opened\n");
+            if(delayOnFile == NULL || delayOffFile == NULL) logPrint("led.c: delay file can't be opened");
             
             fputs("1000", delayOffFile);
             fputs("1000", delayOnFile);
@@ -327,7 +337,6 @@ void LED_setCommand(char* command)
     // pthread_t LED_threadHandle;
     if(!LED_isThreadStatusOn()) 
     {
-        printf("creating a thread...\n");
         // LED_createThread();
         LED_setThreadStatusOn();
     }
@@ -336,8 +345,8 @@ void LED_setCommand(char* command)
 
     for(int i = 0; i < MAX_PRIORITY; i++)
     {
-        if(LED_commandStack[i] != NULL) printf("%d - %s\n", i, LED_commandStack[i]->command);
-        else printf("%d - empty\n", i);
+        if(LED_commandStack[i] != NULL) logPrint("%d - %s", i, LED_commandStack[i]->command);
+        else logPrint("%d - empty", i);
     }
 }
 
@@ -347,7 +356,7 @@ void LED_clearCommand(char* command)
 
     for(int i = 0; i < MAX_PRIORITY; i++)
     {
-        if(LED_commandStack[i] != NULL) printf("%d - %s\n", i, LED_commandStack[i]->command);
-        else printf("%d - empty\n", i);
+        if(LED_commandStack[i] != NULL) logPrint("%d - %s", i, LED_commandStack[i]->command);
+        else logPrint("%d - empty", i);
     }
 }

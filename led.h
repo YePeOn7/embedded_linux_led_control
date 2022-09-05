@@ -36,7 +36,7 @@ typedef struct {
 
 /****************************************/
 
-void test();
+void logPrint(const char* fmt, ...);
 // pthread_t LED_createThread();
 // void LED_setRedTriggerType(triggerType_t type);
 // void LED_setGreenTriggerType(triggerType_t type);
