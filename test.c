@@ -4,15 +4,16 @@
 #include <stdarg.h>
 #include "led.h"
 
-char str1[100] = "Yohan";
-char* str2;
+char str1[];
+
+char str1[]="yohan";
+
 
 int main(int argc, char** argv)
 {
-    str2 = str1;
     while(1)
     {
-        printf("%s %s\n", str1, str2);
+        printf("%s\n", str1);
         sleep(1);
     }
     return 0;

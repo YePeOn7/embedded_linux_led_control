@@ -36,12 +36,9 @@ typedef struct {
 }ledCommand_t;
 
 /****************************************/
+extern ledCommand_t LED_commands[];
 
-// void logPrint(const char* fmt, ...);
-// pthread_t LED_createThread();
-// void LED_setRedTriggerType(triggerType_t type);
-// void LED_setGreenTriggerType(triggerType_t type);
-// void LED_setBlueTriggerType(triggerType_t type);
+int LED_getLenCommands();
 void LED_setTriggerType(ledColor_t color, triggerType_t type);
 void LED_setCommand(char* command);
 void LED_clearCommand(char* command);

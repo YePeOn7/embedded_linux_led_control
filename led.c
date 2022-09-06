@@ -6,27 +6,26 @@
 #include <stdarg.h>
 #include "led.h"
 
-
 #define LED_LOG             1       
 #define MAX_PRIORITY        10
-#define LEN_LED_COMMANDS    sizeof(LED_commands)/sizeof(ledCommand_t)
 #define LED_PATH_PREFIX     "/sys/class/leds"
+#define LEN_LED_COMMANDS    sizeof(LED_commands)/sizeof(ledCommand_t)
 // #define LED_PATH_PREFIX     "."
 #define RED_LED_PATH        LED_PATH_PREFIX"/led_r"
 #define GREEN_LED_PATH      LED_PATH_PREFIX"/led_g"
 #define BLUE_LED_PATH       LED_PATH_PREFIX"/led_b"
 
 /********** Declare the LED commands here **************/
-ledCommand_t LED_commands[] = {{"c1", LED_RED, LED_STATIC, 1, 0},
-                                {"c2", LED_BLUE, LED_STATIC, 2, 0},
-                                {"c3", LED_GREEN, LED_STATIC, 3, 10},
-                                {"c4", LED_RED, LED_BLINKING_FAST, 4, 5},
-                                {"c5", LED_BLUE, LED_BLINKING_SLOW, 4, 5},
-                                {"c6", LED_WHITE, LED_BLINKING_FAST, 5, 0},
-                                {"c7", LED_PURPLE, LED_BLINKING_FAST, 5, 0},
-                                {"c8", LED_CYAN, LED_BLINKING_SLOW, 6, 0},
-                                {"c9", LED_WHITE, LED_BLINKING_VERY_SLOW, 7, 0},
-                                {"c10", LED_WHITE, LED_BLINKING_FAST, 9, 0}};
+ledCommand_t LED_commands[] = {{"C1", LED_RED, LED_STATIC, 1, 0},
+                                {"C2", LED_BLUE, LED_STATIC, 2, 0},
+                                {"C3", LED_GREEN, LED_STATIC, 3, 10},
+                                {"C4", LED_RED, LED_BLINKING_FAST, 4, 5},
+                                {"C5", LED_BLUE, LED_BLINKING_SLOW, 4, 5},
+                                {"C6", LED_WHITE, LED_BLINKING_FAST, 5, 0},
+                                {"C7", LED_PURPLE, LED_BLINKING_FAST, 5, 0},
+                                {"C8", LED_CYAN, LED_BLINKING_SLOW, 6, 0},
+                                {"C9", LED_WHITE, LED_BLINKING_VERY_SLOW, 7, 0},
+                                {"C10", LED_WHITE, LED_BLINKING_FAST, 9, 0}};
 
 ledCommand_t* LED_priorityStack[MAX_PRIORITY] = {NULL};
 time_t LED_commandStartTime[MAX_PRIORITY] = {0};
@@ -42,6 +41,11 @@ void logPrint(const char* fmt, ...)
         printf("\n");
         va_end(argptr);
     }
+}
+
+int LED_getLenCommands()
+{
+    return LEN_LED_COMMANDS;
 }
 
 void delayMs(int ms)
@@ -82,19 +86,23 @@ void LED_clearCommandStackByPriority(int priority)
 int LED_clearCommandFromStack(char* command)
 {
     int found = 0;
-    for(int i = 0; i < LEN_LED_COMMANDS; i++)
+    for(int i = 0; i < MAX_PRIORITY; i++)
     {
         logPrint("Checking --> %s", LED_commands[i].command);
-        if(!strcmp(command, LED_commands[i].command))
+        if(LED_priorityStack[i] != NULL && !strcmp(command, LED_priorityStack[i]->command))
         {
-            logPrint("Clearing stack: %s ---- priority: %d", LED_commands[i].command, LED_commands[i].priority);            
-            LED_clearCommandStackByPriority(LED_commands[i].priority);
+            logPrint("Clearing stack: %s ---- priority: %d", LED_priorityStack[i]->command, LED_priorityStack[i]->priority);            
+            LED_clearCommandStackByPriority(LED_priorityStack[i]->priority);
             found = 1;
             break;
         }
     }
 
-    if(!found) return -1; // the command is not found in the stack
+    if(!found) 
+    {
+        logPrint("\nCommand is not found in the priority Stack...\n");
+        return -1; // the command is not found in the priority stack
+    }
     return 0;
 }
 
@@ -334,7 +342,8 @@ void *LED_threadLoop(void *args)
                 {
                     logPrint("running command \"%s\", with priority %d", LED_priorityStack[i]->command, i);
                     LED_currentRunningcommand = LED_priorityStack[i]->command;
-                    LED_setTriggerType(LED_priorityStack[i]->color, LED_priorityStack[i]->type);                   
+                     
+                    LED_setTriggerType(LED_priorityStack[i]->color, LED_priorityStack[i]->type);  
                 }
 
                 break; 

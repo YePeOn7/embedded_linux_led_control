@@ -124,35 +124,18 @@ int main(int argc, char** argv)
                 {
                     printf("\n ====== Set Command ======\n");
                     printf("0: Exit\n");
-                    printf("1: c1\n");
-                    printf("2: c2\n");
-                    printf("3: c3\n");
-                    printf("4: c4\n");
-                    printf("5: c5\n");
-                    printf("6: c6\n");
-                    printf("7: c7\n");
-                    printf("8: c8\n");
-                    printf("9: c9\n");
-                    printf("10: c10\n");
+             
+                    for(int i = 0; i < LED_getLenCommands(); i++) printf("%d: %s\n", i+1, LED_commands[i].command);
                     printf("Enter option: ");
-                    
                     scanf("%d", &command);
+
                     if(command == 0) break;
-                    
-                    printf("\n");
-                    switch(command)
+                    else if(command < LED_getLenCommands() + 1)
                     {
-                        case 1: LED_setCommand("c1"); break;
-                        case 2: LED_setCommand("c2"); break;
-                        case 3: LED_setCommand("c3"); break;
-                        case 4: LED_setCommand("c4"); break;
-                        case 5: LED_setCommand("c5"); break;
-                        case 6: LED_setCommand("c6"); break;
-                        case 7: LED_setCommand("c7"); break;
-                        case 8: LED_setCommand("c8"); break;
-                        case 9: LED_setCommand("c9"); break;
-                        case 10: LED_setCommand("c10"); break;
+                        printf("\n");
+                        LED_setCommand(LED_commands[command-1].command);
                     }
+
                     usleep(500000);
                 }
                 break;
@@ -162,35 +145,17 @@ int main(int argc, char** argv)
                 {
                     printf("\n ====== Clear Command ======\n");
                     printf("0: Exit\n");
-                    printf("1: c1\n");
-                    printf("2: c2\n");
-                    printf("3: c3\n");
-                    printf("4: c4\n");
-                    printf("5: c5\n");
-                    printf("6: c6\n");
-                    printf("7: c7\n");
-                    printf("8: c8\n");
-                    printf("9: c9\n");
-                    printf("10: c10\n");
+                    for(int i = 0; i < LED_getLenCommands(); i++) printf("%d: %s\n", i+1, LED_commands[i].command);
                     printf("Enter option: ");
-                    
                     scanf("%d", &command);
-                    if(command == 0) break;
                     
-                    printf("\n");
-                    switch(command)
+                    if(command == 0) break;
+                    else if(command < LED_getLenCommands() + 1)
                     {
-                        case 1: LED_clearCommand("c1"); break;
-                        case 2: LED_clearCommand("c2"); break;
-                        case 3: LED_clearCommand("c3"); break;
-                        case 4: LED_clearCommand("c4"); break;
-                        case 5: LED_clearCommand("c5"); break;
-                        case 6: LED_clearCommand("c6"); break;
-                        case 7: LED_clearCommand("c7"); break;
-                        case 8: LED_clearCommand("c8"); break;
-                        case 9: LED_clearCommand("c9"); break;
-                        case 10: LED_clearCommand("c10"); break;
+                        printf("\n");
+                        LED_clearCommand(LED_commands[command-1].command);
                     }
+
                     usleep(500000);
                 }
                 break;
