@@ -4,19 +4,15 @@
 #include <stdarg.h>
 #include "led.h"
 
-typedef struct
-{
-    int data1;
-    int data2;
-    int data3;
-}s_t;
+char str1[100] = "Yohan";
+char* str2;
 
 int main(int argc, char** argv)
 {
-    s_t myS = {2,3};
+    str2 = str1;
     while(1)
     {
-        printf("%d %d %d\n", myS.data1, myS.data2, myS.data3);
+        printf("%s %s\n", str1, str2);
         sleep(1);
     }
     return 0;

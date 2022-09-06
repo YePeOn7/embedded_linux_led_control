@@ -10,25 +10,25 @@
 #define LED_LOG             1       
 #define MAX_PRIORITY        10
 #define LEN_LED_COMMANDS    sizeof(LED_commands)/sizeof(ledCommand_t)
-// #define LED_PATH_PREFIX     "/sys/class/leds"
-#define LED_PATH_PREFIX     "."
+#define LED_PATH_PREFIX     "/sys/class/leds"
+// #define LED_PATH_PREFIX     "."
 #define RED_LED_PATH        LED_PATH_PREFIX"/led_r"
 #define GREEN_LED_PATH      LED_PATH_PREFIX"/led_g"
 #define BLUE_LED_PATH       LED_PATH_PREFIX"/led_b"
 
 /********** Declare the LED commands here **************/
-ledCommand_t LED_commands[] = {{"c1", LED_WHITE, LED_STATIC, 1, 0},
-                                {"c2", LED_BLUE, LED_BLINKING_FAST, 2, 0},
-                                {"c3", LED_YELLOW, LED_BLINKING_SLOW, 3, 0},
-                                {"c4", LED_YELLOW, LED_BLINKING_SLOW, 4, 5},
-                                {"c5", LED_YELLOW, LED_BLINKING_SLOW, 4, 5},
-                                {"c6", LED_YELLOW, LED_BLINKING_SLOW, 5, 0},
-                                {"c7", LED_YELLOW, LED_BLINKING_SLOW, 5, 0},
-                                {"c8", LED_YELLOW, LED_BLINKING_SLOW, 6, 0},
-                                {"c9", LED_YELLOW, LED_BLINKING_SLOW, 7, 0},
-                                {"c10", LED_YELLOW, LED_BLINKING_SLOW, 9, 0}};
+ledCommand_t LED_commands[] = {{"c1", LED_RED, LED_STATIC, 1, 0},
+                                {"c2", LED_BLUE, LED_STATIC, 2, 0},
+                                {"c3", LED_GREEN, LED_STATIC, 3, 10},
+                                {"c4", LED_RED, LED_BLINKING_FAST, 4, 5},
+                                {"c5", LED_BLUE, LED_BLINKING_SLOW, 4, 5},
+                                {"c6", LED_WHITE, LED_BLINKING_FAST, 5, 0},
+                                {"c7", LED_PURPLE, LED_BLINKING_FAST, 5, 0},
+                                {"c8", LED_CYAN, LED_BLINKING_SLOW, 6, 0},
+                                {"c9", LED_WHITE, LED_BLINKING_VERY_SLOW, 7, 0},
+                                {"c10", LED_WHITE, LED_BLINKING_FAST, 9, 0}};
 
-ledCommand_t* LED_commandStack[MAX_PRIORITY] = {NULL};
+ledCommand_t* LED_priorityStack[MAX_PRIORITY] = {NULL};
 time_t LED_commandStartTime[MAX_PRIORITY] = {0};
 int threadStatus = 0;
 
@@ -66,8 +66,8 @@ void LED_addCommandToStack(char* command)
         logPrint("Checking --> %s", LED_commands[i].command);
         if(!strcmp(command, LED_commands[i].command))
         {
-            logPrint("updating stack: %s ---- priority: %d", LED_commands[i].command, LED_commands[i].priority);            
-            LED_commandStack[LED_commands[i].priority] = &LED_commands[i];
+            logPrint("updating priority stack: %d --> %s ", LED_commands[i].priority, LED_commands[i].command);            
+            LED_priorityStack[LED_commands[i].priority] = &LED_commands[i];
             time(&LED_commands[i].startTime);
             break;
         }
@@ -76,7 +76,7 @@ void LED_addCommandToStack(char* command)
 
 void LED_clearCommandStackByPriority(int priority)
 {
-    LED_commandStack[priority] = NULL;
+    LED_priorityStack[priority] = NULL;
 }
 
 int LED_clearCommandFromStack(char* command)
@@ -306,7 +306,7 @@ void LED_setTriggerType(ledColor_t color, triggerType_t type) // can be used to 
 void *LED_threadLoop(void *args)
 {
     // int counter = 0;
-    int LED_currentRunningPriority = -1;
+    char* LED_currentRunningcommand = NULL;
     time_t currentTime;
     logPrint("starting thread...");
     while(1)
@@ -314,31 +314,38 @@ void *LED_threadLoop(void *args)
         time(&currentTime);
         for(int i = 0; i < MAX_PRIORITY; i++)
         {
-            if(LED_commandStack[i] != NULL)
+            if(LED_priorityStack[i] != NULL)
             {
-                if(LED_commandStack[i]->holdTime != 0 && 
-                    currentTime - LED_commandStack[i]->startTime >= LED_commandStack[i]->holdTime)
+                if(LED_priorityStack[i]->holdTime != 0 && 
+                    currentTime - LED_priorityStack[i]->startTime >= LED_priorityStack[i]->holdTime)
                 {
-                    logPrint("\nHold time timeout reached - Clearing stack on priority %d: %s", i, LED_commandStack[i]->command);
+                    logPrint("\nHold time timeout reached - Clearing stack on priority %d: %s", i, LED_priorityStack[i]->command);
                     LED_clearCommandStackByPriority(i);
 
                     for(int i = 0; i < MAX_PRIORITY; i++)
                     {
-                        if(LED_commandStack[i] != NULL) logPrint("%d - %s, enterTime: %li", i, LED_commandStack[i]->command, LED_commandStack[i]->startTime);
+                        if(LED_priorityStack[i] != NULL) logPrint("%d - %s, enterTime: %li", i, LED_priorityStack[i]->command, LED_priorityStack[i]->startTime);
                         else logPrint("%d - empty", i);
                     }
                     continue;
                 }
 
-                else if(LED_currentRunningPriority != i)
+                else if(LED_currentRunningcommand == NULL || strcmp(LED_currentRunningcommand, LED_priorityStack[i]->command))
                 {
-                    LED_currentRunningPriority = i;
-                    LED_setTriggerType(LED_commandStack[i]->color, LED_commandStack[i]->type);
-                    break;                    
+                    logPrint("running command \"%s\", with priority %d", LED_priorityStack[i]->command, i);
+                    LED_currentRunningcommand = LED_priorityStack[i]->command;
+                    LED_setTriggerType(LED_priorityStack[i]->color, LED_priorityStack[i]->type);                   
                 }
+
+                break; 
             }
 
-            if(i == MAX_PRIORITY-1) LED_setTriggerType(LED_WHITE, LED_OFF);
+            else if(i == MAX_PRIORITY-1 && LED_currentRunningcommand != NULL) 
+            {
+                logPrint("Priority Stack is empty, turning off the LED...");
+                LED_setTriggerType(LED_WHITE, LED_OFF);
+                LED_currentRunningcommand = NULL;
+            }
         }
         delayMs(500);
     }
@@ -364,10 +371,9 @@ void LED_setCommand(char* command)
     }
 
     LED_addCommandToStack(command);
-
     for(int i = 0; i < MAX_PRIORITY; i++)
     {
-        if(LED_commandStack[i] != NULL) logPrint("%d - %s, enterTime: %li", i, LED_commandStack[i]->command, LED_commandStack[i]->startTime);
+        if(LED_priorityStack[i] != NULL) logPrint("%d - %s, enterTime: %li", i, LED_priorityStack[i]->command, LED_priorityStack[i]->startTime);
         else logPrint("%d - empty", i);
     }
 }
@@ -378,7 +384,7 @@ void LED_clearCommand(char* command)
 
     for(int i = 0; i < MAX_PRIORITY; i++)
     {
-        if(LED_commandStack[i] != NULL) logPrint("%d - %s, enterTime: %li", i, LED_commandStack[i]->command, LED_commandStack[i]->startTime);
+        if(LED_priorityStack[i] != NULL) logPrint("%d - %s, enterTime: %li", i, LED_priorityStack[i]->command, LED_priorityStack[i]->startTime);
         else logPrint("%d - empty", i);
     }
 }

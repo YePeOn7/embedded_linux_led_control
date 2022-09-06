@@ -1,7 +1,7 @@
 #include "led.h"
-#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 int main(int argc, char** argv)
 {
@@ -113,8 +113,10 @@ int main(int argc, char** argv)
 
                                 LED_setTriggerType(choosenLED, command);
                             }
+                            usleep(500000);
                         }
                     }
+                    usleep(500000);
                 }
                 break;
             case 2: // Set Command Test
@@ -151,6 +153,7 @@ int main(int argc, char** argv)
                         case 9: LED_setCommand("c9"); break;
                         case 10: LED_setCommand("c10"); break;
                     }
+                    usleep(500000);
                 }
                 break;
 
@@ -188,6 +191,7 @@ int main(int argc, char** argv)
                         case 9: LED_clearCommand("c9"); break;
                         case 10: LED_clearCommand("c10"); break;
                     }
+                    usleep(500000);
                 }
                 break;
         }
