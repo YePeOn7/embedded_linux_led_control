@@ -16,16 +16,19 @@
 #define BLUE_LED_PATH       LED_PATH_PREFIX"/led_b"
 
 /********** Declare the LED commands here **************/
-ledCommand_t LED_commands[] = {{"C1", LED_RED, LED_STATIC, 1, 0},
-                                {"C2", LED_BLUE, LED_STATIC, 2, 0},
-                                {"C3", LED_GREEN, LED_STATIC, 3, 10},
-                                {"C4", LED_RED, LED_BLINKING_FAST, 4, 5},
-                                {"C5", LED_BLUE, LED_BLINKING_SLOW, 4, 5},
-                                {"C6", LED_WHITE, LED_BLINKING_FAST, 5, 0},
-                                {"C7", LED_PURPLE, LED_BLINKING_FAST, 5, 0},
-                                {"C8", LED_CYAN, LED_BLINKING_SLOW, 6, 0},
-                                {"C9", LED_WHITE, LED_BLINKING_VERY_SLOW, 7, 0},
-                                {"C10", LED_WHITE, LED_BLINKING_FAST, 9, 0}};
+ledCommand_t LED_commands[] = {{"ota_start", LED_BLUE, LED_STATIC, LED_ACTION_SET_CLEAR, 8, 4, 0},
+                                {"boot", LED_BLUE, LED_BLINKING_SLOW, LED_ACTION_SET, 9, 0, 0},
+                                {"on", LED_GREEN, LED_STATIC, LED_ACTION_SET, 7, 0, 0},
+                                {"event", LED_GREEN, LED_BLINKING_SLOW, LED_ACTION_SET, 6, 0, 5},
+                                {"sd_fail", LED_RED, LED_STATIC, LED_ACTION_SET, 2, 0, 0},
+                                {"network_fail", LED_RED, LED_BLINKING_SLOW, LED_ACTION_SET, 4, 0, 0},
+                                {"ota_fail", LED_RED, LED_BLINKING_SLOW, LED_ACTION_SET, 4, 0, 0},
+                                {"cloud_fail", LED_RED, LED_BLINKING_VERY_SLOW, LED_ACTION_SET, 6, 0, 0},
+                                {"ota_success", LED_RED, LED_OFF, LED_ACTION_CLEAR, 8, 0, 0},
+                                {"sd_formatted", LED_RED, LED_OFF, LED_ACTION_CLEAR, 0, 2, 0},
+                                {"network_success", LED_RED, LED_OFF, LED_ACTION_CLEAR, 0, 4, 0},
+                                {"ota_start", LED_RED, LED_OFF, LED_ACTION_CLEAR, 0, 4, 0},
+                                {"cloud_success", LED_RED, LED_OFF, LED_ACTION_CLEAR, 0, 6, 0}};
 
 ledCommand_t* LED_priorityStack[MAX_PRIORITY] = {NULL};
 time_t LED_commandStartTime[MAX_PRIORITY] = {0};
@@ -70,8 +73,8 @@ void LED_addCommandToStack(char* command)
         logPrint("Checking --> %s", LED_commands[i].command);
         if(!strcmp(command, LED_commands[i].command))
         {
-            logPrint("updating priority stack: %d --> %s ", LED_commands[i].priority, LED_commands[i].command);            
-            LED_priorityStack[LED_commands[i].priority] = &LED_commands[i];
+            logPrint("updating priority stack: %d --> %s ", LED_commands[i].prioritySet, LED_commands[i].command);            
+            LED_priorityStack[LED_commands[i].prioritySet] = &LED_commands[i];
             time(&LED_commands[i].startTime);
             break;
         }
@@ -91,8 +94,8 @@ int LED_clearCommandFromStack(char* command)
         logPrint("Checking --> %s", LED_commands[i].command);
         if(LED_priorityStack[i] != NULL && !strcmp(command, LED_priorityStack[i]->command))
         {
-            logPrint("Clearing stack: %s ---- priority: %d", LED_priorityStack[i]->command, LED_priorityStack[i]->priority);            
-            LED_clearCommandStackByPriority(LED_priorityStack[i]->priority);
+            logPrint("Clearing stack: %s ---- priority: %d", LED_priorityStack[i]->command, LED_priorityStack[i]->prioritySet);            
+            LED_clearCommandStackByPriority(LED_priorityStack[i]->prioritySet);
             found = 1;
             break;
         }
@@ -324,6 +327,7 @@ void *LED_threadLoop(void *args)
         {
             if(LED_priorityStack[i] != NULL)
             {
+                // Check if Timeout
                 if(LED_priorityStack[i]->holdTime != 0 && 
                     currentTime - LED_priorityStack[i]->startTime >= LED_priorityStack[i]->holdTime)
                 {
@@ -338,6 +342,7 @@ void *LED_threadLoop(void *args)
                     continue;
                 }
 
+                // Execute LED command if the highest priority different with current running command
                 else if(LED_currentRunningcommand == NULL || strcmp(LED_currentRunningcommand, LED_priorityStack[i]->command))
                 {
                     logPrint("running command \"%s\", with priority %d", LED_priorityStack[i]->command, i);
@@ -378,8 +383,28 @@ void LED_setCommand(char* command)
         LED_createThread();
         LED_setThreadStatusOn();
     }
+    
+    for(int i = 0; i < LEN_LED_COMMANDS; i++)
+    {
+        if(!strcmp(command, LED_commands[i].command))
+        {
+            switch(LED_commands[i].action)
+            {
+                case LED_ACTION_NONE:
+                    break;
+                case LED_ACTION_SET:
+                    LED_addCommandToStack(command);
+                    break;
+                case LED_ACTION_CLEAR:
+                    logPrint("Clearing priority %d, -- %s\n", LED_commands[i].priorityClear, LED_commands[i].command);
+                    LED_clearCommandStackByPriority(LED_commands[i].priorityClear);
+                    break;
+                case LED_ACTION_SET_CLEAR:
+                    break;
+            }
+        }
+    }
 
-    LED_addCommandToStack(command);
     for(int i = 0; i < MAX_PRIORITY; i++)
     {
         if(LED_priorityStack[i] != NULL) logPrint("%d - %s, enterTime: %li", i, LED_priorityStack[i]->command, LED_priorityStack[i]->startTime);

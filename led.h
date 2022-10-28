@@ -7,6 +7,14 @@
 
 typedef enum
 {
+    LED_ACTION_NONE,
+    LED_ACTION_SET,
+    LED_ACTION_CLEAR,
+    LED_ACTION_SET_CLEAR
+}ledAction_t;
+
+typedef enum
+{
     LED_WHITE,
     LED_RED,
     LED_GREEN,
@@ -29,8 +37,10 @@ typedef struct {
     char* command;
     ledColor_t color;
     triggerType_t type;
-    int priority;
-    int holdTime; // in seconds
+    ledAction_t action;
+    int prioritySet;    // priority to be set
+    int priorityClear;  // priority to be clear
+    int holdTime;       // in seconds
 
     time_t startTime; // don't need to be initialized
 }ledCommand_t;
