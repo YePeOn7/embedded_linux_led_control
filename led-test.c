@@ -14,7 +14,6 @@ int main(int argc, char** argv)
         printf("0: Exit\n");
         printf("1: LED Trigger Test\n");
         printf("2: Set Command Test\n");
-        printf("3: Clear Command Test\n");
         printf("Enter option: ");
         
         scanf("%d", &command);
@@ -134,26 +133,6 @@ int main(int argc, char** argv)
                     {
                         printf("\n");
                         LED_setCommand(LED_commands[command-1].command);
-                    }
-
-                    usleep(500000);
-                }
-                break;
-
-            case 3: // Clear Command Test
-                while(1)
-                {
-                    printf("\n ====== Clear Command ======\n");
-                    printf("0: Exit\n");
-                    for(int i = 0; i < LED_getLenCommands(); i++) printf("%d: %s\n", i+1, LED_commands[i].command);
-                    printf("Enter option: ");
-                    scanf("%d", &command);
-                    
-                    if(command == 0) break;
-                    else if(command < LED_getLenCommands() + 1)
-                    {
-                        printf("\n");
-                        LED_clearCommand(LED_commands[command-1].command);
                     }
 
                     usleep(500000);
