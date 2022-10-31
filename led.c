@@ -6,7 +6,9 @@
 #include <stdarg.h>
 #include "led.h"
 
-#define LED_LOG             1       
+#define LED_LOG             1  
+#define USE_THREAD          1
+
 #define MAX_PRIORITY        10
 #define LED_PATH_PREFIX     "/sys/class/leds"
 #define LEN_LED_COMMANDS    sizeof(LED_commands)/sizeof(ledCommand_t)
@@ -16,9 +18,11 @@
 #define BLUE_LED_PATH       LED_PATH_PREFIX"/led_b"
 
 /********** Declare the LED commands here **************/
-ledCommand_t LED_commands[] = {{"ota_start", LED_BLUE, LED_STATIC, LED_ACTION_SET_CLEAR, 8, 4, 0},
+ledCommand_t LED_commands[] = {{"off", LED_RED, LED_OFF, LED_ACTION_SET, 0, 0, 0},
+                                {"on", LED_RED, LED_OFF, LED_ACTION_CLEAR, 0, 0, 0},
+                                {"ota_start", LED_BLUE, LED_STATIC, LED_ACTION_SET_CLEAR, 8, 4, 0},
                                 {"boot", LED_BLUE, LED_BLINKING_SLOW, LED_ACTION_SET, 9, 0, 0},
-                                {"on", LED_GREEN, LED_STATIC, LED_ACTION_SET, 7, 0, 0},
+                                {"run", LED_GREEN, LED_STATIC, LED_ACTION_SET, 7, 0, 0},
                                 {"event", LED_GREEN, LED_BLINKING_SLOW, LED_ACTION_SET, 6, 0, 5},
                                 {"sd_fail", LED_RED, LED_STATIC, LED_ACTION_SET, 2, 0, 0},
                                 {"network_fail", LED_RED, LED_BLINKING_SLOW, LED_ACTION_SET, 4, 0, 0},
@@ -28,10 +32,13 @@ ledCommand_t LED_commands[] = {{"ota_start", LED_BLUE, LED_STATIC, LED_ACTION_SE
                                 {"sd_formatted", LED_RED, LED_OFF, LED_ACTION_CLEAR, 0, 2, 0},
                                 {"network_success", LED_RED, LED_OFF, LED_ACTION_CLEAR, 0, 4, 0},
                                 {"ota_start", LED_RED, LED_OFF, LED_ACTION_CLEAR, 0, 4, 0},
-                                {"cloud_success", LED_RED, LED_OFF, LED_ACTION_CLEAR, 0, 6, 0}};
+                                {"cloud_success", LED_RED, LED_OFF, LED_ACTION_CLEAR, 0, 6, 0},
+                                {"test_white_enable", LED_WHITE, LED_STATIC, LED_ACTION_SET, 1, 0, 0},
+                                {"test_white_disable", LED_WHITE, LED_STATIC, LED_ACTION_CLEAR, 0, 1, 0}};
 
 ledCommand_t* LED_priorityStack[MAX_PRIORITY] = {NULL};
 time_t LED_commandStartTime[MAX_PRIORITY] = {0};
+char* LED_currentRunningcommand = NULL;
 int threadStatus = 0;
 
 void logPrint(const char* fmt, ...)
@@ -314,53 +321,57 @@ void LED_setTriggerType(ledColor_t color, triggerType_t type) // can be used to 
     }
 }
 
+void LED_check()
+{
+    time_t currentTime;
+    
+    time(&currentTime);
+    for(int i = 0; i < MAX_PRIORITY; i++)
+    {
+        if(LED_priorityStack[i] != NULL)
+        {
+            // Check if Timeout
+            if(LED_priorityStack[i]->holdTime != 0 && 
+                currentTime - LED_priorityStack[i]->startTime >= LED_priorityStack[i]->holdTime)
+            {
+                logPrint("\nHold time timeout reached - Clearing stack on priority %d: %s", i, LED_priorityStack[i]->command);
+                LED_clearCommandStackByPriority(i);
+
+                for(int i = 0; i < MAX_PRIORITY; i++)
+                {
+                    if(LED_priorityStack[i] != NULL) logPrint("%d - %s, enterTime: %li", i, LED_priorityStack[i]->command, LED_priorityStack[i]->startTime);
+                    else logPrint("%d - empty", i);
+                }
+                continue;
+            }
+
+            // Execute LED command if the highest priority different with current running command
+            else if(LED_currentRunningcommand == NULL || strcmp(LED_currentRunningcommand, LED_priorityStack[i]->command))
+            {
+                logPrint("running command \"%s\", with priority %d", LED_priorityStack[i]->command, i);
+                LED_currentRunningcommand = LED_priorityStack[i]->command;
+                    
+                LED_setTriggerType(LED_priorityStack[i]->color, LED_priorityStack[i]->type);  
+            }
+
+            break; 
+        }
+
+        else if(i == MAX_PRIORITY-1 && LED_currentRunningcommand != NULL) 
+        {
+            logPrint("Priority Stack is empty, turning off the LED...");
+            LED_setTriggerType(LED_WHITE, LED_OFF);
+            LED_currentRunningcommand = NULL;
+        }
+    }
+}
+
 void *LED_threadLoop(void *args)
 {
-    // int counter = 0;
-    char* LED_currentRunningcommand = NULL;
-    time_t currentTime;
     logPrint("starting thread...");
     while(1)
     {
-        time(&currentTime);
-        for(int i = 0; i < MAX_PRIORITY; i++)
-        {
-            if(LED_priorityStack[i] != NULL)
-            {
-                // Check if Timeout
-                if(LED_priorityStack[i]->holdTime != 0 && 
-                    currentTime - LED_priorityStack[i]->startTime >= LED_priorityStack[i]->holdTime)
-                {
-                    logPrint("\nHold time timeout reached - Clearing stack on priority %d: %s", i, LED_priorityStack[i]->command);
-                    LED_clearCommandStackByPriority(i);
-
-                    for(int i = 0; i < MAX_PRIORITY; i++)
-                    {
-                        if(LED_priorityStack[i] != NULL) logPrint("%d - %s, enterTime: %li", i, LED_priorityStack[i]->command, LED_priorityStack[i]->startTime);
-                        else logPrint("%d - empty", i);
-                    }
-                    continue;
-                }
-
-                // Execute LED command if the highest priority different with current running command
-                else if(LED_currentRunningcommand == NULL || strcmp(LED_currentRunningcommand, LED_priorityStack[i]->command))
-                {
-                    logPrint("running command \"%s\", with priority %d", LED_priorityStack[i]->command, i);
-                    LED_currentRunningcommand = LED_priorityStack[i]->command;
-                     
-                    LED_setTriggerType(LED_priorityStack[i]->color, LED_priorityStack[i]->type);  
-                }
-
-                break; 
-            }
-
-            else if(i == MAX_PRIORITY-1 && LED_currentRunningcommand != NULL) 
-            {
-                logPrint("Priority Stack is empty, turning off the LED...");
-                LED_setTriggerType(LED_WHITE, LED_OFF);
-                LED_currentRunningcommand = NULL;
-            }
-        }
+        LED_check();
         delayMs(500);
     }
 
@@ -378,7 +389,7 @@ pthread_t LED_createThread()
 void LED_setCommand(char* command)
 {
     // pthread_t LED_threadHandle;
-    if(!LED_isThreadStatusOn()) 
+    if(!LED_isThreadStatusOn() && USE_THREAD) 
     {
         LED_createThread();
         LED_setThreadStatusOn();
