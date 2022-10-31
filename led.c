@@ -20,18 +20,17 @@
 /********** Declare the LED commands here **************/
 ledCommand_t LED_commands[] = {{"off", LED_RED, LED_OFF, LED_ACTION_SET, 0, 0, 0},
                                 {"on", LED_RED, LED_OFF, LED_ACTION_CLEAR, 0, 0, 0},
-                                {"ota_start", LED_BLUE, LED_STATIC, LED_ACTION_SET_CLEAR, 8, 4, 0},
+                                {"ota_start", LED_BLUE, LED_STATIC, LED_ACTION_SET_CLEAR, 7, 4, 0},
                                 {"boot", LED_BLUE, LED_BLINKING_SLOW, LED_ACTION_SET, 9, 0, 0},
-                                {"run", LED_GREEN, LED_STATIC, LED_ACTION_SET, 7, 0, 0},
+                                {"run", LED_GREEN, LED_STATIC, LED_ACTION_SET, 8, 0, 0},
                                 {"event", LED_GREEN, LED_BLINKING_SLOW, LED_ACTION_SET, 6, 0, 5},
                                 {"sd_fail", LED_RED, LED_STATIC, LED_ACTION_SET, 2, 0, 0},
                                 {"network_fail", LED_RED, LED_BLINKING_SLOW, LED_ACTION_SET, 4, 0, 0},
                                 {"ota_fail", LED_RED, LED_BLINKING_SLOW, LED_ACTION_SET, 4, 0, 0},
                                 {"cloud_fail", LED_RED, LED_BLINKING_VERY_SLOW, LED_ACTION_SET, 6, 0, 0},
-                                {"ota_success", LED_RED, LED_OFF, LED_ACTION_CLEAR, 8, 0, 0},
+                                {"ota_success", LED_RED, LED_OFF, LED_ACTION_CLEAR, 0, 7, 0},
                                 {"sd_formatted", LED_RED, LED_OFF, LED_ACTION_CLEAR, 0, 2, 0},
                                 {"network_success", LED_RED, LED_OFF, LED_ACTION_CLEAR, 0, 4, 0},
-                                {"ota_start", LED_RED, LED_OFF, LED_ACTION_CLEAR, 0, 4, 0},
                                 {"cloud_success", LED_RED, LED_OFF, LED_ACTION_CLEAR, 0, 6, 0},
                                 {"test_white_enable", LED_WHITE, LED_STATIC, LED_ACTION_SET, 1, 0, 0},
                                 {"test_white_disable", LED_WHITE, LED_STATIC, LED_ACTION_CLEAR, 0, 1, 0}};
@@ -411,6 +410,8 @@ void LED_setCommand(char* command)
                     LED_clearCommandStackByPriority(LED_commands[i].priorityClear);
                     break;
                 case LED_ACTION_SET_CLEAR:
+                    LED_clearCommandStackByPriority(LED_commands[i].priorityClear);
+                    LED_addCommandToStack(command);
                     break;
             }
         }
