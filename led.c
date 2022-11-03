@@ -320,7 +320,7 @@ void LED_setTriggerType(ledColor_t color, triggerType_t type) // can be used to 
     }
 }
 
-void LED_check()
+void* LED_check()
 {
     time_t currentTime;
     
@@ -363,6 +363,8 @@ void LED_check()
             LED_currentRunningcommand = NULL;
         }
     }
+
+    return NULL;
 }
 
 void *LED_threadLoop(void *args)
