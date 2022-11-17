@@ -2,13 +2,15 @@ CC = gcc
 CFLAG = -Wall -I .
 LFLAG = -lpthread
 
-CFILE = ${wildcard *.c}
-CFILE := ${filter-out test.c, ${CFILE}}
-OFILE = ${CFILE:.c=.o}
-TARGET = led-test
+LED_C = led.c
+LED_OBJ = led.o
 
-all: ${OFILE}
-	${CC} ${CFLAG} ${OFILE} ${LFLAG} -o ${TARGET}
+# TARGET = led-set-command
+TARGET = led-test
+TARGET_OBJ = ${TARGET:%=%.o}
+
+all: ${LED_OBJ} ${TARGET_OBJ}
+	${CC} ${CFLAG} ${LED_OBJ} ${TARGET_OBJ} ${LFLAG} -o ${TARGET}
 
 %.o: %.c
 	${CC} ${CFLAG} -c $< -o $@  
